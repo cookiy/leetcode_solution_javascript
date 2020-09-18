@@ -1,0 +1,85 @@
+/**
+1124. 表现良好的最长时间段
+给你一份工作时间表 hours，上面记录着某一位员工每天的工作小时数。
+
+我们认为当员工一天中的工作小时数大于 8 小时的时候，那么这一天就是「劳累的一天」。
+
+所谓「表现良好的时间段」，意味在这段时间内，「劳累的天数」是严格 大于「不劳累的天数」。
+
+请你返回「表现良好时间段」的最大长度。
+
+ 
+
+示例 1：
+
+输入：hours = [9,9,6,0,6,6,9]
+输出：3
+解释：最长的表现良好时间段是 [9,9,6]。
+ 
+
+提示：
+
+1 <= hours.length <= 10000
+0 <= hours[i] <= 16
+
+1 Make a new array A of +1/-1s corresponding to if hours[i] is > 8 or not. The goal is to find the longest subarray with positive sum.
+
+2 Using prefix sums (PrefixSum[i+1] = A[0] + A[1] + ... + A[i]), you need to find for each j, the smallest i < j with PrefixSum[i] + 1 == PrefixSum[j].
+ */
+
+/**
+ * 前缀和
+ * 定义一个前缀和数组，代表当前天以前所有工作时长 > 8小时的天数；
+ * 那么前缀和数组 两个元素的差 > 0 就是表现良好的时间段，我们只需要求得两个前缀和元素之差的最大值
+ * @param {number[]} hours
+ * @return {number}
+ */
+var longestWPI = function (hours) {
+  let preSum = new Array(hours.length + 1).fill(0)
+  for (let i = 1; i <= hours.length; i++) {
+    if (hours[i - 1] > 8) preSum[i] = preSum[i - 1] + 1
+    else preSum[i] = preSum[i - 1] - 1
+  }
+  let max = 0
+  for (let i = 0; i < preSum.length - 1; i++) {
+    for (let j = i + 1; j < preSum.length; j++) {
+      if (preSum[j] - preSum[i] > 0) {
+        max = Math.max(max, j - i)
+      }
+    }
+  }
+  return max
+}
+
+/**
+ * 前缀和 + 单调栈
+ * 定义一个前缀和数组，代表当前天以前所有工作时长 > 8小时的天数；
+ * 求最长时间段，就是求上面前缀和数组前后元素满足关系 i<j && preSum[i] < preSum[j] 的最大跨度问题，类似题目962
+ * 求解方法：定义一个单调递减栈，保存从左到右出现的最小值的最左边下标；然后从右到左查找元素 > 单减栈栈顶，更新最大跨度；
+ * @param {number[]} hours
+ * @return {number}
+ */
+var longestWPI = function (hours) {
+  // 前缀和
+  let preSum = new Array(hours.length + 1).fill(0)
+  for (let i = 0; i < hours.length; i++) {
+    if (hours[i] > 8) preSum[i + 1] = preSum[i] + 1
+    else preSum[i + 1] = preSum[i] - 1
+  }
+
+  // 单减栈
+  let stack = []
+  stack.push(0)
+  for (let i = 1; i < preSum.length; i++) {
+    if (preSum[stack[stack.length - 1]] > preSum[i]) stack.push(i)
+  }
+
+  // 从右到左求最大跨度
+  let max = 0
+  for (let i = preSum.length - 1; i > max; i--) {
+    while(stack.length > 0 && preSum[stack[stack.length - 1]] < preSum[i]){
+      max = Math.max(max, i - stack.pop())
+    }
+  }
+  return max
+}
